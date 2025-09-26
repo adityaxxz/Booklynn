@@ -1,0 +1,7 @@
+.venv
+books.db
+__pycache__
+
+.env
+
+
