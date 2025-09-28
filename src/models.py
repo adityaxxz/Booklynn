@@ -9,7 +9,7 @@ class LanguageEnum(enum.Enum):
     Other="Other"
 
 class Book(SQLModel, table=True):
-    __tablename__ = "books"
+    __tablename__: str = "books"
 
     uid:uuid.UUID = Field(
         sa_column=Column(

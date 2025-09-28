@@ -11,4 +11,4 @@ class Settings(BaseSettings):
     )
 
 # Create settings instance
-config = Settings()
+Config = Settings()

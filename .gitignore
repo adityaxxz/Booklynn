@@ -4,4 +4,25 @@ __pycache__
 
 .env
 
+.pytest_cache
+
+
+.vscode
+
+migrations
+
+.cursor/rules
+
+
+
+
+
+
+
+
+
+
+
+
+
 

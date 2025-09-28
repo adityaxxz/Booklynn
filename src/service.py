@@ -8,9 +8,8 @@ import uuid
 
 class BookService:
     """
-    This class provides methods to create, read, update and delete books.
+    This class provides methods to create, read, update and delete books from the db.
     """
-
     async def get_all_books(self, session: AsyncSession):
         statement = select(Book).order_by(desc(Book.created_at))
         result = await session.execute(statement)
@@ -28,10 +27,6 @@ class BookService:
         
         new_book = Book(**data_dict)
 
-        # It is correct to display only the year if your application only needs the year.
-        # However, this line converts the year string to a datetime object, which may not be necessary
-        # if your Book model expects a string or integer for the year.
-        # If Book.year is a string or int, you can just assign it directly:
         new_book.year = str(data_dict['year'])
 
         session.add(new_book)

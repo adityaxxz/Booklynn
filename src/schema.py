@@ -33,6 +33,7 @@ class BookCreate(BaseModel):
     # This class is used to validate the request when creating a book
     title: str
     author: str
+    year: str
     language: LanguageEnum
 
 
