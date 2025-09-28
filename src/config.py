@@ -6,6 +6,10 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./books.db"
     JWT_SECRET_KEY: str = "e698218fbf1d9d46b06a6c1aa41b3124"
     JWT_ALGORITHM: str = "HS256"
+    
+    # Redis configuration
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
 
     model_config = SettingsConfigDict(
         env_file=".env",

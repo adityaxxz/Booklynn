@@ -5,12 +5,15 @@ from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from fastapi.exceptions import HTTPException
 from src.auth.utils import verify_password, create_access_token
-from datetime import timedelta
+from datetime import timedelta, datetime
 from fastapi.responses import JSONResponse
+from .dependencies import AccessTokenBearer, RefreshTokenBearer
+from src.db.redis import add_jti_to_blocklist, token_in_blocklist
 
 
 auth_router = APIRouter()
 user_service = UserService()
+
 
 @auth_router.post("/signup", response_model=UserModel, status_code=status.HTTP_201_CREATED)
 async def create_user_account(user_data: UserCreateModel, session: AsyncSession = Depends(get_session)):
@@ -55,3 +58,30 @@ async def login_user(login_data: UserLoginModel, session: AsyncSession = Depends
             )
 
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Email Or Password")
+
+
+@auth_router.post("/refresh")
+async def get_refresh_token(token_details: dict = Depends(RefreshTokenBearer())):
+
+    expiry_time = token_details.get("exp")
+
+    if expiry_time and datetime.fromtimestamp(expiry_time) > datetime.now():
+        new_access_token = create_access_token(user_data=token_details.get("user") or {})
+
+        return JSONResponse(content={"access_token": new_access_token})
+
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token")
+
+
+
+@auth_router.get("/logout")
+async def logout_user_revoke_token(token_details: dict = Depends(AccessTokenBearer())):
+    
+    jti = token_details.get("jti")
+
+    if not jti:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token not found")
+
+    await add_jti_to_blocklist(jti)
+
+    return JSONResponse(content={"message": "Logged out successfully, Token revoked successfully"}, status_code=status.HTTP_200_OK)
