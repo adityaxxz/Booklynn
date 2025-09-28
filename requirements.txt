@@ -4,8 +4,10 @@ annotated-types==0.7.0
 anyio==4.11.0
 bcrypt==5.0.0
 certifi==2025.8.3
+cffi==2.0.0
 click==8.3.0
 colorama==0.4.6
+cryptography==46.0.1
 dnspython==2.8.0
 email-validator==2.3.0
 fastapi==0.117.1
@@ -23,10 +25,12 @@ markdown-it-py==4.0.0
 markupsafe==3.0.2
 mdurl==0.1.2
 passlib==1.7.4
+pycparser==2.23
 pydantic==2.11.9
 pydantic-core==2.33.2
 pydantic-settings==2.11.0
 pygments==2.19.2
+pyjwt==2.10.1
 python-dotenv==1.1.1
 python-multipart==0.0.20
 pyyaml==6.0.3

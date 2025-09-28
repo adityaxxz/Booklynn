@@ -33,7 +33,8 @@ class UserService:
         new_user.password_hash = generate_password_hash(password)
 
         session.add(new_user)
-
         await session.commit()
 
         return new_user
+
+    

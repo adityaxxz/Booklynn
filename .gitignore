@@ -1,18 +1,14 @@
 .venv
 books.db
 __pycache__
-
 .env
-
 .pytest_cache
-
-
 .vscode
-
 migrations
-
 .cursor/rules
 
+
+venv
 
 
 

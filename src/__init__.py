@@ -7,7 +7,7 @@
 
 from fastapi import FastAPI
 from src.routesv2 import book_router
-from src.auth import auth_router
+from src.auth.routes import auth_router
 from contextlib import asynccontextmanager
 from src.db.main import initdb
 
