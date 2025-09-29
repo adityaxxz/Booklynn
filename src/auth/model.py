@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field, Column
 import uuid
 from datetime import datetime
-from sqlalchemy import func
+from sqlalchemy import func, String
 
 #created db model, with user_accounts table
 
@@ -19,8 +19,12 @@ class User(SQLModel, table=True):
 
     username: str
     first_name: str = Field(nullable=True)
-    is_verified: bool = False
     email: str = Field(unique=True, index=True)
+
+    role: str = Field(
+        sa_column=Column(String, nullable=False, server_default="user")
+    )
+    is_verified: bool = Field(default=False)
     password_hash: str
     created_at: datetime = Field(default=func.now())
     updated_at: datetime = Field(default=func.now())

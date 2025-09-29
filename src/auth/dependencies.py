@@ -4,7 +4,14 @@ from fastapi import status
 from src.auth.utils import decode_token
 from fastapi import Request
 from src.db.redis import token_in_blocklist
+from fastapi import Depends
+from src.db.main import get_session
+from sqlmodel.ext.asyncio.session import AsyncSession
+from src.auth.service import UserService
+from .model import User
+from typing import List, Any
 
+user_service = UserService()
 
 class TokenBearer(HTTPBearer):
 
@@ -20,10 +27,7 @@ class TokenBearer(HTTPBearer):
             # This handles case sensitivity issues
             auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
             if not auth_header:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Missing Authorization header"
-                )
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Missing Authorization header")
             
             if not auth_header.startswith("Bearer "):
                 raise HTTPException(
@@ -83,3 +87,27 @@ class RefreshTokenBearer(TokenBearer):
     def verify_token_data(self, token_data: dict | None) -> None:
         if token_data and not token_data.get("refresh"):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Please provide a refresh token",)
+
+
+
+async def get_current_user(
+    token_details: dict = Depends(AccessTokenBearer()),
+    session: AsyncSession = Depends(get_session),
+):
+    user_email = token_details["user"]["email"]   # token_details.get("user").get("email")
+
+    user = await user_service.get_user_by_email(user_email, session)
+
+    return user
+    
+
+#for Role Based Access Control
+class RoleChecker:
+    def __init__(self, allowed_roles: List[str]) -> None:
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, current_user: User = Depends(get_current_user)) -> Any:
+        if current_user.role in self.allowed_roles:
+            return True
+
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail="You are not allowed to perform this action.")

@@ -1,18 +1,26 @@
 from fastapi import APIRouter, Depends, status
-from .schema import UserCreateModel, UserModel, UserLoginModel
+from .schema import UserCreateModel, UserModel, UserLoginModel, UserBooksModel
 from .service import UserService
 from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from fastapi.exceptions import HTTPException
-from src.auth.utils import verify_password, create_access_token
+from .utils import verify_password, create_access_token
 from datetime import timedelta, datetime
 from fastapi.responses import JSONResponse
-from .dependencies import AccessTokenBearer, RefreshTokenBearer
+from .dependencies import (AccessTokenBearer, RefreshTokenBearer, get_current_user, RoleChecker)
 from src.db.redis import add_jti_to_blocklist, token_in_blocklist
+from .model import User
+from sqlmodel import select
+from uuid import UUID
 
 
 auth_router = APIRouter()
 user_service = UserService()
+role_checker = RoleChecker(allowed_roles=["admin"])
+
+@auth_router.get("/me", response_model=UserModel)
+async def get_curr_user(user: User = Depends(get_current_user), _: bool = Depends(role_checker)):
+    return user
 
 
 @auth_router.post("/signup", response_model=UserModel, status_code=status.HTTP_201_CREATED)
@@ -85,3 +93,27 @@ async def logout_user_revoke_token(token_details: dict = Depends(AccessTokenBear
     await add_jti_to_blocklist(jti)
 
     return JSONResponse(content={"message": "Logged out successfully, Token revoked successfully"}, status_code=status.HTTP_200_OK)
+
+
+@auth_router.delete("/users/{user_uid}")
+async def delete_user(user_uid: str, session: AsyncSession = Depends(get_session)):
+    # Support both hyphenated UUIDs and 32-char hex without hyphens
+    try:
+        normalized_uid = UUID(user_uid)
+    except ValueError:
+        try:
+            normalized_uid = UUID(hex=user_uid)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid UUID format for user_uid")
+
+    statement = select(User).where(User.uid == normalized_uid)
+    result = await session.exec(statement)
+    user = result.first()
+
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    await session.delete(user)
+    await session.commit()
+
+    return JSONResponse(content={"message": "User deleted successfully", "uid": str(normalized_uid)}, status_code=status.HTTP_200_OK)
