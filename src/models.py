@@ -1,5 +1,6 @@
+from typing import Optional
 from sqlmodel import SQLModel, Field, Column
-from sqlalchemy import Enum, String, DateTime
+from sqlalchemy import Enum, String, DateTime, ForeignKey
 from datetime import datetime
 import uuid
 import enum
@@ -25,6 +26,14 @@ class Book(SQLModel, table=True):
     author: str
     year: str
     language: LanguageEnum = Field(sa_column=Column(Enum(LanguageEnum), nullable=False)) #for literal
+
+
+    user_uid: Optional[uuid.UUID] = Field(
+        default=None,
+        sa_column=Column(String(36), ForeignKey("user_accounts.uid"), nullable=True),
+    ) 
+
+    
 
     created_at: datetime = Field(sa_column=Column(DateTime, default=datetime.now))
     updated_at: datetime = Field(sa_column=Column(DateTime, default=datetime.now))

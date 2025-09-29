@@ -1,5 +1,6 @@
 from fastapi import APIRouter, status, Depends
 from fastapi.exceptions import HTTPException
+from starlette.status import HTTP_200_OK, HTTP_201_CREATED
 from src.schema import Book, BookUpdate, BookCreate
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.service import BookService
@@ -14,6 +15,13 @@ access_token_bearer = AccessTokenBearer()
 role_checker = RoleChecker(allowed_roles=["admin", "user"])
 
 
+@book_router.post("/", status_code=HTTP_201_CREATED, response_model=Book, dependencies=[Depends(role_checker)])
+async def create_a_book(book_data: BookCreate, session: AsyncSession, token_details=Depends(access_token_bearer)):
+    user_id = token_details.get("user")["user_uid"]
+    new_book = await book_service.create_book(book_data, user_id, session)
+    return new_book
+
+
 @book_router.get("/", response_model=List[Book], dependencies=[Depends(role_checker)])
 async def get_all_books(session: AsyncSession = Depends(get_session), token_details=Depends(access_token_bearer)):
     print(token_details)
@@ -21,12 +29,12 @@ async def get_all_books(session: AsyncSession = Depends(get_session), token_deta
     return books
 
 
-@book_router.post("/", status_code=status.HTTP_201_CREATED, response_model=Book, dependencies=[Depends(role_checker)])
-async def create_a_book(book_data: BookCreate, session: AsyncSession = Depends(get_session), token_details=Depends(access_token_bearer)) -> Book:
-    # print(token_details)
+# @book_router.post("/", status_code=status.HTTP_201_CREATED, response_model=Book, dependencies=[Depends(role_checker)])
+# async def create_a_book(book_data: BookCreate, session: AsyncSession = Depends(get_session), token_details=Depends(access_token_bearer)) -> Book:
+#     # print(token_details)
 
-    new_book = await book_service.create_book(book_data, session)
-    return new_book
+#     new_book = await book_service.create_book(book_data, session)
+#     return new_book
 
 
 @book_router.get("/{book_uid}", response_model=Book, dependencies=[Depends(role_checker)])
