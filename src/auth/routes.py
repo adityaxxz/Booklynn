@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status
+from errors import InvalidCredentials, InvalidToken, UserAlreadyExists, UserNotFound
 from .schema import UserCreateModel, UserModel, UserLoginModel, UserBooksModel
 from .service import UserService
 from src.db.main import get_session
@@ -30,7 +31,7 @@ async def create_user_account(user_data: UserCreateModel, session: AsyncSession 
     user_exists = await user_service.user_exists(email, session)
 
     if user_exists:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="User with email already exists",)
+        raise UserAlreadyExists()
 
     new_user = await user_service.create_user(user_data, session)
 
@@ -65,7 +66,7 @@ async def login_user(login_data: UserLoginModel, session: AsyncSession = Depends
                 }
             )
 
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Email Or Password")
+    raise InvalidCredentials()
 
 
 @auth_router.post("/refresh")
@@ -78,7 +79,7 @@ async def get_refresh_token(token_details: dict = Depends(RefreshTokenBearer()))
 
         return JSONResponse(content={"access_token": new_access_token})
 
-    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token")
+    raise InvalidToken()
 
 
 
@@ -88,7 +89,7 @@ async def logout_user_revoke_token(token_details: dict = Depends(AccessTokenBear
     jti = token_details.get("jti")
 
     if not jti:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token not found")
+        raise InvalidToken()
 
     await add_jti_to_blocklist(jti)
 
@@ -111,7 +112,7 @@ async def delete_user(user_uid: str, session: AsyncSession = Depends(get_session
     user = result.first()
 
     if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise UserNotFound()
 
     await session.delete(user)
     await session.commit()

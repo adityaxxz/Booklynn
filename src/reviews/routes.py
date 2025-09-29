@@ -5,6 +5,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.models import User
 from src.db.main import get_session
 from src.auth.dependencies import RoleChecker, get_current_user
+from errors import BookNotFound
 
 
 review_service = ReviewService()
@@ -22,7 +23,7 @@ async def get_all_reviews(session:AsyncSession = Depends(get_session)):
 async def get_review(review_uid:str, session: AsyncSession = Depends(get_session)):
     book = await review_service.get_review(review_uid, session)
 
-    if not book: raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found") 
+    if not book: raise BookNotFound()
     return book
 
 

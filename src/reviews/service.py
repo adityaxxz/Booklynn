@@ -3,6 +3,7 @@ from fastapi import status
 from fastapi.exceptions import HTTPException
 from sqlmodel import desc, select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from errors import BookNotFound
 from src.auth.service import UserService
 from src.service import BookService
 from src.db.models import Review
@@ -24,10 +25,10 @@ class ReviewService:
             new_review = Review(**review_data_dict)
 
             if not book:
-                raise HTTPException(detail="Book not found", status_code=status.HTTP_404_NOT_FOUND)
+                raise BookNotFound()
 
             if not user:
-                raise HTTPException(detail="Book not found", status_code=status.HTTP_404_NOT_FOUND)
+                raise BookNotFound()
 
             # Set foreign keys explicitly as strings to match SQLite String(36) columns
             new_review.user_uid = str(user.uid)
