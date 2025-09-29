@@ -8,7 +8,7 @@ from fastapi import Depends
 from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.auth.service import UserService
-from .model import User
+from src.db.models import User
 from typing import List, Any
 
 user_service = UserService()

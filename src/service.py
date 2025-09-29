@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlmodel import desc, select
-from src.models import Book
+from src.db.models import Book
 from src.schema import BookCreate, BookUpdate
 from datetime import datetime
 import uuid

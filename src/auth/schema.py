@@ -30,7 +30,7 @@ class UserLoginModel(BaseModel):
     password: str = Field(min_length=5)
 
 
-class UserBooksModel(UserModel):
+class UserBooksModel(UserModel):   #* subclass of UserModel
     books: List[Book]
     # reviews: List[ReviewModel]
 

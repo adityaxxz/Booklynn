@@ -13,15 +13,20 @@ from src.db.main import initdb
 
 
 # the lifespan event
-@asynccontextmanager
-async def lifespan(app: FastAPI):    
-    print("Server is starting...")
-    await initdb()
-    yield
-    print("Server is stopping")
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):    
+#     print("Server is starting...")
+#     await initdb()
+#     yield
+#     print("Server is stopping")
+
+version="v1"
 
 app = FastAPI(
-    lifespan=lifespan # add the lifespan event to our application
+    title="Bookly",
+    description="A REST API for a book review web service",
+    version=version,
+    # lifespan=lifespan # add the lifespan event to our application
 )
 
 app.include_router(

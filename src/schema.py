@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Annotated, Optional
 import uuid
 from datetime import datetime
-from src.models import LanguageEnum
+from src.db.models import LanguageEnum
 
 class Book(BaseModel):
     uid: uuid.UUID = Field(..., description="Unique identifier of the book")

@@ -9,7 +9,7 @@ from datetime import timedelta, datetime
 from fastapi.responses import JSONResponse
 from .dependencies import (AccessTokenBearer, RefreshTokenBearer, get_current_user, RoleChecker)
 from src.db.redis import add_jti_to_blocklist, token_in_blocklist
-from .model import User
+from src.db.models import User
 from sqlmodel import select
 from uuid import UUID
 
@@ -18,7 +18,7 @@ auth_router = APIRouter()
 user_service = UserService()
 role_checker = RoleChecker(allowed_roles=["admin"])
 
-@auth_router.get("/me", response_model=UserModel)
+@auth_router.get("/me", response_model=UserBooksModel)
 async def get_curr_user(user: User = Depends(get_current_user), _: bool = Depends(role_checker)):
     return user
 

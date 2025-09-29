@@ -13,7 +13,7 @@ async_engine = create_async_engine(
 async def initdb():
     """create a connection to our db"""
     # Import models here to avoid circular imports
-    from src.auth.model import User
+    from src.db.models import User
     
     async with async_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)

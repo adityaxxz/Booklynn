@@ -6,7 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from src.service import BookService
 from src.db.main import get_session
 from typing import List
-from src.models import Book
+from src.db.models import Book
 from src.auth.dependencies import AccessTokenBearer, RoleChecker
 
 book_router = APIRouter()
