@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status, Depends
 from fastapi.exceptions import HTTPException
 from starlette.status import HTTP_200_OK, HTTP_201_CREATED
-from src.schema import Book, BookUpdate, BookCreate
+from src.schema import Book, BookUpdate, BookCreate, BookDetailModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.service import BookService
 from src.db.main import get_session
@@ -16,7 +16,8 @@ role_checker = RoleChecker(allowed_roles=["admin", "user"])
 
 
 @book_router.post("/", status_code=HTTP_201_CREATED, response_model=Book, dependencies=[Depends(role_checker)])
-async def create_a_book(book_data: BookCreate, session: AsyncSession, token_details=Depends(access_token_bearer)):
+async def create_a_book(book_data: BookCreate,session: AsyncSession = Depends(get_session),token_details=Depends(access_token_bearer),
+):
     user_id = token_details.get("user")["user_uid"]
     new_book = await book_service.create_book(book_data, user_id, session)
     return new_book

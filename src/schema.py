@@ -1,8 +1,9 @@
 from pydantic import BaseModel, Field, field_validator
-from typing import Annotated, Optional
+from typing import Annotated, Optional, List
 import uuid
 from datetime import datetime
 from src.db.models import LanguageEnum
+from src.reviews.schema import ReviewModel
 
 class Book(BaseModel):
     uid: uuid.UUID = Field(..., description="Unique identifier of the book")
@@ -37,4 +38,6 @@ class BookCreate(BaseModel):
     language: LanguageEnum
 
 
-
+class BookDetailModel(Book):
+    reviews: List[ReviewModel]
+    # tags:List[TagModel]

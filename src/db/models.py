@@ -3,9 +3,8 @@ import uuid, enum
 from datetime import datetime
 from sqlalchemy import Enum, String, DateTime, ForeignKey, func
 from typing import List, Optional
-from .models import Book, User
 
-#created db model, with user_accounts table
+#created db model, with user_accounts, books, reviews table
 
 class User(SQLModel, table=True):
     __tablename__: str = "user_accounts"
@@ -32,8 +31,7 @@ class User(SQLModel, table=True):
     updated_at: datetime = Field(default=func.now())
 
     books: List["Book"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy":"selectin"})
-
-    # reviews: List["Review"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "selectin"})
+    reviews: List["Review"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "selectin"})
 
     def __repr__(self) -> str:
         return f"<User {self.username}>"
@@ -72,6 +70,7 @@ class Book(SQLModel, table=True):
     updated_at: datetime = Field(sa_column=Column(DateTime, default=datetime.now))
 
     user: Optional[User] = Relationship(back_populates="books")
+    reviews: List["Review"] = Relationship(back_populates="book", sa_relationship_kwargs={"lazy": "selectin"})
 
 
     def __repr__(self) -> str:
@@ -81,13 +80,19 @@ class Book(SQLModel, table=True):
 class Review(SQLModel, table=True):
     __tablename__: str = "reviews"
 
-    uid: uuid.UUID = Field(sa_column=Column(String(36), nullable=False, primary_key=True, default=uuid.uuid4))
+    uid: uuid.UUID = Field(sa_column=Column(String(36), nullable=False, primary_key=True, default=lambda: str(uuid.uuid4())))
     rating: int = Field(lt=6)
 
     review_text : str = Field(sa_column=Column(String(100), nullable=False))
 
-    user_uid: Optional[uuid.UUID] = Field(default=None, foreign_key="users.uid")
-    book_uid: Optional[uuid.UUID] = Field(default=None, foreign_key="books.uid")
+    user_uid: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String(36), ForeignKey("user_accounts.uid"), nullable=True),
+    )
+    book_uid: Optional[str] = Field(
+        default=None,
+        sa_column=Column(String(36), ForeignKey("books.uid"), nullable=True),
+    )
 
     created_at: datetime = Field(sa_column=Column(DateTime, default=datetime.now))
     updated_at: datetime = Field(sa_column=Column(DateTime, default=datetime.now))
