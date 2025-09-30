@@ -3,7 +3,7 @@ from fastapi import status
 from fastapi.exceptions import HTTPException
 from sqlmodel import desc, select
 from sqlmodel.ext.asyncio.session import AsyncSession
-from errors import BookNotFound
+from src.errors import BookNotFound
 from src.auth.service import UserService
 from src.service import BookService
 from src.db.models import Review

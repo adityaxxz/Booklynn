@@ -5,7 +5,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.models import User
 from src.db.main import get_session
 from src.auth.dependencies import RoleChecker, get_current_user
-from errors import BookNotFound
+from src.errors import BookNotFound
 
 
 review_service = ReviewService()

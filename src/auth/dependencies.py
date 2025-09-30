@@ -1,7 +1,7 @@
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.exceptions import HTTPException
 from fastapi import status
-from errors import *
+from src.errors import *
 from src.auth.utils import decode_token
 from fastapi import Request
 from src.db.redis import token_in_blocklist

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from errors import InvalidCredentials, InvalidToken, UserAlreadyExists, UserNotFound
+from src.errors import InvalidCredentials, InvalidToken, UserAlreadyExists, UserNotFound
 from .schema import UserCreateModel, UserModel, UserLoginModel, UserBooksModel
 from .service import UserService
 from src.db.main import get_session
