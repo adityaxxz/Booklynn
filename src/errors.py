@@ -4,7 +4,7 @@ from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
-__all__ = ["BookNotFound", "UserNotFound", "InvalidToken","RefreshTokenRequired","AccessTokenRequired","RevokedToken","InvalidCredentials","UserAlreadyExists"]
+__all__ = ["BookNotFound", "UserNotFound", "InvalidToken","RefreshTokenRequired","AccessTokenRequired","RevokedToken","InvalidCredentials","UserAlreadyExists","AccountNotVerified", "InsufficientPermission"]
 
 class BooklynnException(Exception):
     """This is the base class for all Booklynn errors"""
@@ -44,7 +44,13 @@ class UserNotFound(BooklynnException):
     """User Not found"""
     pass
 
+class AccountNotVerified(BooklynnException):
+    """Exception raised , when account not verified"""
+    pass
 
+class InsufficientPermission(BooklynnException):
+    """User does not have the neccessary permissions to perform an action."""
+    pass
 
 def create_exception_handler(
     status_code: int, initial_detail: Any
@@ -142,7 +148,6 @@ def register_all_errors(app: FastAPI):
             },
         ),
     )
-
     app.add_exception_handler(
         BookNotFound,
         create_exception_handler(
@@ -150,6 +155,27 @@ def register_all_errors(app: FastAPI):
             initial_detail={
                 "message": "Book Not Found",
                 "error_code": "book_not_found",
+            },
+        ),
+    )
+    app.add_exception_handler(
+        AccountNotVerified,
+        create_exception_handler(
+            status_code=status.HTTP_403_FORBIDDEN,
+            initial_detail={
+                "message": "Account Not Verified",
+                "error_code": "account_not_verified",
+                "resolution": "Please check your email for verification details"
+            },
+        ),
+    )
+    app.add_exception_handler(
+        InsufficientPermission,
+        create_exception_handler(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            initial_detail={
+                "message": "You do not have enough permissions to perform this action",
+                "error_code": "insufficient_permissions",
             },
         ),
     )
@@ -176,3 +202,5 @@ def register_all_errors(app: FastAPI):
             },
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+    

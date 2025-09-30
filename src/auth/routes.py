@@ -13,8 +13,10 @@ from src.db.redis import add_jti_to_blocklist, token_in_blocklist
 from src.db.models import User
 from sqlmodel import select
 from uuid import UUID
+from src.auth.schema import EmailModel
 from src.mail import mail, create_message
-from src.auth.schema import EmailModel 
+from src.auth.utils import create_url_safe_token, decode_url_safe_token
+from src.config import Config
 
 
 auth_router = APIRouter()
@@ -38,19 +40,76 @@ async def send_mail(emails: EmailModel):
     return {"message": "Email Sent Successfully"}
 
 
+#New signup w email verification
 
-@auth_router.post("/signup", response_model=UserModel, status_code=status.HTTP_201_CREATED)
+@auth_router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def create_user_account(user_data: UserCreateModel, session: AsyncSession = Depends(get_session)):
-
     email = user_data.email
-    user_exists = await user_service.user_exists(email, session)
-
+    user_exists = await user_service.get_user_by_email(email, session)
     if user_exists:
         raise UserAlreadyExists()
 
-    new_user = await user_service.create_user(user_data, session)
+    new_user  = await user_service.create_user(user_data, session)
 
-    return new_user
+    token = create_url_safe_token({"email": email})
+
+    link = f"http://{Config.DOMAIN}/api/auth/verify/{token}"
+
+    html_message = f"""
+    <h2>Welcome to Booklynn! Verify your Email for Signup</h2>
+    <p>Please click this <a href="{link}">link</a> to verify your email.</p>
+    <br></br>
+    <p>Thanks.</p>
+    """
+
+    message = create_message(recipients=[email], subject="Verify your Email for Booklynn", body=html_message)
+
+    await mail.send_message(message)
+
+    return {
+        "message": "Account Created Successfully! Check email to verify the account.",
+        "user": new_user,
+    }
+
+@auth_router.get("/verify/{token}")
+async def verify_user_account(token: str, session: AsyncSession = Depends(get_session)):
+
+    token_data = decode_url_safe_token(token)
+
+    user_email = token_data.get("email") if token_data else None
+
+    if user_email:
+        user = await user_service.get_user_by_email(user_email, session)
+
+        if not user:
+            raise UserNotFound()
+
+        await user_service.update_user(user, {"is_verified": True}, session)
+
+        return JSONResponse(
+            content={"message": "Account Verified Successfully!"},
+            status_code=status.HTTP_200_OK,
+        )
+
+    return JSONResponse(
+        content={"message": "Error Occurred During Verification"},
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    )
+
+
+
+# @auth_router.post("/signup", response_model=UserModel, status_code=status.HTTP_201_CREATED)
+# async def create_user_account(user_data: UserCreateModel, session: AsyncSession = Depends(get_session)):
+
+#     email = user_data.email
+#     user_exists = await user_service.user_exists(email, session)
+
+#     if user_exists:
+#         raise UserAlreadyExists()
+
+#     new_user = await user_service.create_user(user_data, session)
+
+#     return new_user
 
 
 @auth_router.post("/login")

@@ -5,6 +5,8 @@ import jwt
 from src.config import Config
 import logging, uuid
 from typing import Optional
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from fastapi import HTTPException
 
 
 def generate_password_hash(password: str) -> str:
@@ -53,3 +55,24 @@ def decode_token(token: str) -> dict | None:
     except Exception as e:
         logging.exception(e)
         return None
+
+
+# For serializing the user’s email address
+
+serializer = URLSafeTimedSerializer(secret_key=Config.JWT_SECRET_KEY, salt="email-configuration")
+
+
+def create_url_safe_token(data: dict, expiration=3600) -> str:
+    # Create a URL-safe token. Expiration is enforced during loads via max_age.
+    return serializer.dumps(data)
+
+def decode_url_safe_token(token: str, max_age=3600) -> dict:
+    # Decode a URL-safe token and check for expiration. 
+    try:
+        # Deserialize the token and check if it's expired
+        data = serializer.loads(token, max_age=max_age)
+        return data
+    except SignatureExpired:
+        raise HTTPException(status_code=400, detail="Token has expired")
+    except BadSignature:
+        raise HTTPException(status_code=400, detail="Invalid token")
