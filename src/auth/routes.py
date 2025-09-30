@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Body
 from src.errors import InvalidCredentials, InvalidToken, UserAlreadyExists, UserNotFound
 from .schema import UserCreateModel, UserModel, UserLoginModel, UserBooksModel
 from .service import UserService
@@ -13,6 +13,8 @@ from src.db.redis import add_jti_to_blocklist, token_in_blocklist
 from src.db.models import User
 from sqlmodel import select
 from uuid import UUID
+from src.mail import mail, create_message
+from src.auth.schema import EmailModel 
 
 
 auth_router = APIRouter()
@@ -22,6 +24,19 @@ role_checker = RoleChecker(allowed_roles=["admin"])
 @auth_router.get("/me", response_model=UserBooksModel)
 async def get_curr_user(user: User = Depends(get_current_user), _: bool = Depends(role_checker)):
     return user
+
+@auth_router.post("/send-mail")
+async def send_mail(emails: EmailModel):
+    addresses = emails.addresses
+
+    html = "<h1>Welcome to Booklynn</h1>"
+    subject = "Hello user, thankyou for using Booklynn"
+
+    message=create_message(recipients=addresses, subject=subject, body=html)
+    await mail.send_message(message)
+
+    return {"message": "Email Sent Successfully"}
+
 
 
 @auth_router.post("/signup", response_model=UserModel, status_code=status.HTTP_201_CREATED)

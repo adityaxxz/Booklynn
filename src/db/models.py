@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field, Column, Relationship, null, table
+from sqlmodel import SQLModel, Field, Column, Relationship
 import uuid, enum
 from datetime import datetime
 from sqlalchemy import Enum, String, DateTime, ForeignKey, func
@@ -9,12 +9,14 @@ from typing import List, Optional
 class User(SQLModel, table=True):
     __tablename__: str = "user_accounts"
 
-    uid: uuid.UUID = Field(
-        default_factory=uuid.uuid4,
-        primary_key=True,
-        unique=True,
-        nullable=False,
-        index=True,
+    uid: str = Field(
+        sa_column=Column(
+            String(36),
+            primary_key=True,
+            unique=True,
+            nullable=False,
+            default=lambda: str(uuid.uuid4())
+        ),
         description="Unique identifier for the user account"
     )
 
@@ -61,7 +63,7 @@ class Book(SQLModel, table=True):
     language: LanguageEnum = Field(sa_column=Column(Enum(LanguageEnum), nullable=False)) #for literal
 
 
-    user_uid: Optional[uuid.UUID] = Field(
+    user_uid: Optional[str] = Field(
         default=None,
         sa_column=Column(String(36), ForeignKey("user_accounts.uid"), nullable=True),
     )

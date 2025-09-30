@@ -2,7 +2,7 @@
 # from src.routes import book_router
 
 # version = "v1"
-# app = FastAPI(title="Bookly", description="A Restful API for a book review web service")
+# app = FastAPI(title="Booklynn", description="A Restful API for a book review web service")
 # app.include_router(book_router, prefix=f"/api/{version}/books", tags=["books"])
 
 from src.errors import register_all_errors
@@ -17,25 +17,21 @@ from src.reviews.routes import review_router
 from .middleware import register_middleware
 
 # the lifespan event
-# @asynccontextmanager
-# async def lifespan(app: FastAPI):    
-#     print("Server is starting...")
-#     await initdb()
-#     yield
-#     print("Server is stopping")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
 
 version="v1"
 
 app = FastAPI(
-    title="Bookly",
+    title="Booklynn",
     description="A REST API for a book review web service",
     version=version,
-    # lifespan=lifespan # add the lifespan event to our application
+    lifespan=lifespan
 )
 
 register_all_errors(app)
 register_middleware(app)
-
 
 
 app.include_router(

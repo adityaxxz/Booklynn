@@ -90,7 +90,8 @@ class BookService:
 
         new_book.year = str(book_data_dict['year'])
 
-        new_book.user_uid = uuid.UUID(user_uid) if user_uid else None
+        # Store as string to match Column(String(36)) and avoid UUID object in SQL param
+        new_book.user_uid = str(user_uid) if user_uid else None
         session.add(new_book)
         await session.commit()
         return new_book

@@ -1,5 +1,7 @@
 import asyncio
 import os
+import sys
+from pathlib import Path
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -8,16 +10,24 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 from sqlmodel import SQLModel
-from src.config import Config
-from src.db.models import Book, User
 
-database_url = Config.DATABASE_URL   
+# Avoid importing the package-level __init__ (which initializes FastAPI app)
+_ROOT = Path(__file__).resolve().parents[1]
+_SRC = _ROOT / "src"
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
+from config import Config  # type: ignore
+from db.models import Book, User  # type: ignore
+
+database_url = Config.DATABASE_URL
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
-config.set_main_option("sqlalchemy.url", database_url)
+# Escape percent signs for ConfigParser interpolation
+config.set_main_option("sqlalchemy.url", database_url.replace('%', '%%'))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

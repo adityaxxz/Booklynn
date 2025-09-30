@@ -6,41 +6,41 @@ from sqlalchemy.exc import SQLAlchemyError
 
 __all__ = ["BookNotFound", "UserNotFound", "InvalidToken","RefreshTokenRequired","AccessTokenRequired","RevokedToken","InvalidCredentials","UserAlreadyExists"]
 
-class BooklyException(Exception):
-    """This is the base class for all bookly errors"""
+class BooklynnException(Exception):
+    """This is the base class for all Booklynn errors"""
     pass
 
-class InvalidToken(BooklyException):
+class InvalidToken(BooklynnException):
     """User has provided an invalid or expired token"""
     pass
 
-class RevokedToken(BooklyException):
+class RevokedToken(BooklynnException):
     """User has provided a token that has been revoked"""
     pass
 
-class AccessTokenRequired(BooklyException):
+class AccessTokenRequired(BooklynnException):
     """User has provided a refresh token when an access token is needed"""
     pass
 
-class RefreshTokenRequired(BooklyException):
+class RefreshTokenRequired(BooklynnException):
     """User has provided an access token when a refresh token is needed"""
     pass
 
-class UserAlreadyExists(BooklyException):
+class UserAlreadyExists(BooklynnException):
     """User has provided an email for a user who exists during sign up."""
     pass
 
-class InvalidCredentials(BooklyException):
+class InvalidCredentials(BooklynnException):
     """User has provided wrong email or password during log in."""
     pass
 
 
-class BookNotFound(BooklyException):
+class BookNotFound(BooklynnException):
     """Book Not found"""
     pass
 
 
-class UserNotFound(BooklyException):
+class UserNotFound(BooklynnException):
     """User Not found"""
     pass
 
