@@ -1,4 +1,5 @@
 erDiagram
+
     users {
         UUID uid PK "NOT NULL"
         VARCHAR username "NOT NULL"

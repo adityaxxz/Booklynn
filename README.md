@@ -74,7 +74,7 @@ erDiagram
         TIMESTAMP created_at "NOT NULL"
     }
 
-    users ||--o{ books : "posts"
+    users ||--o{ books : "creates"
     users ||--o{ reviews : "writes"
     books ||--o{ reviews : "has"
 ```
