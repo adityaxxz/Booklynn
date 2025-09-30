@@ -21,13 +21,21 @@ from .middleware import register_middleware
 async def lifespan(app: FastAPI):
     yield
 
-version="v1"
+version="v2"
 
 app = FastAPI(
     title="Booklynn",
-    description="A REST API for a book review web service",
+    description="Booklynn is a modern RESTful API for discovering, reviewing, and sharing books. It provides endpoints for user authentication, book management, and community-driven reviews, enabling seamless integration for book-related web applications.",
     version=version,
-    lifespan=lifespan
+    lifespan=lifespan,
+    openapi_url=f"/{version}/openapi.json",
+    docs_url=f"/{version}/docs",
+    contact={
+        "name": "adra",
+        "url": "https://0xadra.site",
+        "email": "adityaranjan5995@gmail.com"
+    },
+    redoc_url=f"/{version}/redoc",
 )
 
 register_all_errors(app)

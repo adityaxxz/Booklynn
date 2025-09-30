@@ -21,8 +21,22 @@ class UserCreateModel(BaseModel):
     first_name: str =Field(max_length=25)
     username: str = Field(max_length=8)
     email: str = Field(max_length=40)
-    password: str = Field(min_length=6)
+    password: str = Field(min_length=5)
     role: Literal["user", "admin"] = "user"
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "first_name": "addy",
+                    "username": "0xaddy",
+                    "email": "addy@gmail.com",
+                    "password": "12345",
+                    "role": "admin"
+                }
+            ]
+        }
+    }
     
 
 class UserLoginModel(BaseModel):
