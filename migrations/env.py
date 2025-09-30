@@ -20,7 +20,7 @@ if str(_SRC) not in sys.path:
 from config import Config  # type: ignore
 from db.models import Book, User  # type: ignore
 
-database_url = Config.DATABASE_URL
+database_url = Config.DATABASE_URL.get_secret_value()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

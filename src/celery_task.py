@@ -12,5 +12,5 @@ def send_email(recipients: list[str], subject: str, body: str):
 
     message = create_message(recipients=recipients, subject=subject, body=body)
 
-    async_to_sync(mail.send_message)(message)
+    async_to_sync(mail.send_message)(message)  #allows us to execute the async mail.send_message in a synchronous context, making it compatible with Celery tasks.
     print("📧Email sent")

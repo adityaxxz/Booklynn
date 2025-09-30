@@ -1,0 +1,3 @@
+uvicorn src:app --reload
+celery -A src.celery_task:c_app worker -l info
+celery -A src.celery_task.c_app flower , view at http://localhost:5555/tasks

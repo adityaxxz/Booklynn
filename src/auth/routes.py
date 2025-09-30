@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, Body
+from fastapi import APIRouter, Depends, status, Body, BackgroundTasks
 from src.celery_task import send_email
 from src.errors import InvalidCredentials, InvalidToken, UserAlreadyExists, UserNotFound
 from .schema import PasswordResetConfirmModel, PasswordResetRequestModel, UserCreateModel, UserModel, UserLoginModel, UserBooksModel
@@ -35,8 +35,9 @@ async def send_mail(emails: EmailModel):
     html = "<h1>Welcome to Booklynn</h1>"
     subject = "Hello user, thankyou for using Booklynn"
 
-    message=create_message(recipients=addresses, subject=subject, body=html)
-    await mail.send_message(message)
+    # message=create_message(recipients=addresses, subject=subject, body=html)
+    # await mail.send_message(message)
+    send_email.delay(addresses, subject, html)
 
     return {"message": "Email Sent Successfully"}
 
@@ -44,7 +45,7 @@ async def send_mail(emails: EmailModel):
 #! New signup w email verification
 
 @auth_router.post("/signup", status_code=status.HTTP_201_CREATED)
-async def create_user_account(user_data: UserCreateModel, session: AsyncSession = Depends(get_session)):
+async def create_user_account(user_data: UserCreateModel, bg_task: BackgroundTasks, session: AsyncSession = Depends(get_session),):
     email = user_data.email
     user_exists = await user_service.get_user_by_email(email, session)
     if user_exists:
@@ -62,10 +63,13 @@ async def create_user_account(user_data: UserCreateModel, session: AsyncSession 
     <br></br>
     <p>Thanks.</p>
     """
+    subject="Verify your Email for Booklynn"
 
-    message = create_message(recipients=[email], subject="Verify your Email for Booklynn", body=html_message)
+    # message = create_message(recipients=[email], subject="Verify your Email for Booklynn", body=html_message)
+    # await mail.send_message(message)
+    # bg_task.add_task(mail.send_message, message)
 
-    await mail.send_message(message)
+    send_email.delay([email], subject, html_message)
 
     return {
         "message": "Account Created Successfully! Check email to verify the account.",
@@ -196,14 +200,14 @@ async def password_reset(email_data: PasswordResetRequestModel):
     <p>Please click this <a href="{link}">link</a> to Reset Your Password</p>
     """
     subject = "Reset Your Booklynn Account Password"
-
     # maybe, implement some background task so tht the current impl doesnt block the req until SMTP call finishes
     # using BAckgroud tasks will make the api respond immediately while the email is sent in the bg
     # this impl is synchronous from client perspective
-    message = create_message(recipients=[email], subject=subject, body=html_message)
 
-    await mail.send_message(message)
+    # message = create_message(recipients=[email], subject=subject, body=html_message)
+    # await mail.send_message(message)
 
+    send_email.delay([email], subject, html_message) #sends email in the background
 
     return JSONResponse(content= {
         "message": "Please check your email to reset your password.",

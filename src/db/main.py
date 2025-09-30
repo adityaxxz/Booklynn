@@ -5,7 +5,7 @@ from sqlmodel import SQLModel
 from typing import AsyncGenerator
 
 async_engine = create_async_engine(
-    url=Config.DATABASE_URL,
+    url=Config.DATABASE_URL.get_secret_value(),
     echo=True
 )
 
