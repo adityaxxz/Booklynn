@@ -89,56 +89,23 @@ async def verify_user_account(token: str, session: AsyncSession = Depends(get_se
         user = await user_service.get_user_by_email(user_email, session)
 
         if not user:
-            raise UserNotFound()
+            # redirect to frontend with failure message
+            return RedirectResponse(url=f"{Config.FRONTEND_URL}?verified=0&message=User%20not%20found", status_code=status.HTTP_303_SEE_OTHER)
 
         await user_service.update_user(user, {"is_verified": True}, session)
 
-        return JSONResponse(
-            content={"message": "Account Verified Successfully!"},
-            status_code=status.HTTP_200_OK,
-        )
+        # redirect to frontend with success message
+        return RedirectResponse(url=f"{Config.FRONTEND_URL}?verified=1&message=Account%20Verified%20Successfully", status_code=status.HTTP_303_SEE_OTHER)
 
-    return JSONResponse(
-        content={"message": "Error Occurred During Verification"},
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    )
+    return RedirectResponse(url=f"{Config.FRONTEND_URL}?verified=0&message=Invalid%20or%20expired%20token", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@auth_router.get("/verify", response_class=HTMLResponse)
+@auth_router.get("/verify")
 async def verify_token_form(token: str | None = Query(default=None)):
     if token:
         return RedirectResponse(url=f"./{token}", status_code=status.HTTP_303_SEE_OTHER)
-    return """
-    <!doctype html>
-    <html lang=\"en\">
-      <head>
-        <meta charset=\"utf-8\">
-        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
-        <title>Verify Email Token</title>
-        <style>
-          body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 24px; background: #fafafa; }
-          .card { max-width: 480px; margin: 40px auto; background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-          h1 { font-size: 20px; margin: 0 0 12px; }
-          p { color: #4b5563; margin: 0 0 20px; }
-          input[type=text] { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
-          button { margin-top: 16px; width: 100%; padding: 10px 12px; background: #111827; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-          button:hover { background: #0b0f1a; }
-          small { color: #6b7280; }
-        </style>
-      </head>
-      <body>
-        <div class=\"card\">
-          <h1>Verify your email</h1>
-          <p>Paste the verification token you received via email.</p>
-          <form method=\"post\" action=\"\"> 
-            <label for=\"token\"><small>Verification Token</small></label>
-            <input id=\"token\" name=\"token\" type=\"text\" placeholder=\"eyJhbGciOi...\" required />
-            <button type=\"submit\">Verify</button>
-          </form>
-        </div>
-      </body>
-    </html>
-    """
+    # redirect to frontend landing without HTML
+    return RedirectResponse(url=f"{Config.FRONTEND_URL}", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @auth_router.post("/verify")
