@@ -14,7 +14,7 @@ admin_role_checker = Depends(RoleChecker(["admin"]))
 user_role_checker = Depends(RoleChecker(["admin", "user"]))
 
 
-@review_router.get("/", dependencies=[admin_role_checker])
+@review_router.get("/", dependencies=[user_role_checker])
 async def get_all_reviews(session:AsyncSession = Depends(get_session)):
     books = await review_service.get_all_reviews(session)
     return books
@@ -33,7 +33,7 @@ async def add_review(book_uid: str, review_data: ReviewCreateModel, curr_user: U
     new_review = await review_service.add_review_to_book(
                         user_email=curr_user.email,
                         book_uid=book_uid,
-                        review_data=review_data, 
+                        review_data=review_data,
                         session=session)
 
     return new_review

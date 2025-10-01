@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     USE_CREDENTIALS: bool = True
     VALIDATE_CERTS: bool = True
     DOMAIN: str = "localhost:8000"
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL") or "http://localhost:8501"
 
     model_config = SettingsConfigDict(
         env_file=DOTENV_PATH,

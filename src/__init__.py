@@ -44,18 +44,18 @@ register_middleware(app)
 
 app.include_router(
     book_router,
-    prefix="/books",
+    prefix=f"/{version}/books",
     tags=['books']
 )
 
 app.include_router(
     auth_router,
-    prefix="/auth",
+    prefix=f"/{version}/auth",
     tags=['auth']
 )
 
 app.include_router(
     review_router,
-    prefix="/review",
+    prefix=f"/{version}/review",
     tags=['review']
 )

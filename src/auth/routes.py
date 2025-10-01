@@ -8,7 +8,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from fastapi.exceptions import HTTPException
 from .utils import generate_password_hash, verify_password, create_access_token
 from datetime import timedelta, datetime
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
+from fastapi import Form, Query
 from .dependencies import (AccessTokenBearer, RefreshTokenBearer, get_current_user, RoleChecker)
 from src.db.redis import add_jti_to_blocklist, token_in_blocklist
 from src.db.models import User
@@ -22,10 +23,11 @@ from src.config import Config
 
 auth_router = APIRouter()
 user_service = UserService()
-role_checker = RoleChecker(allowed_roles=["admin"])
+admin_role_checker = RoleChecker(allowed_roles=["admin"])
+user_role_checker = RoleChecker(allowed_roles=["admin", "user"])
 
 @auth_router.get("/me", response_model=UserBooksModel)
-async def get_curr_user(user: User = Depends(get_current_user), _: bool = Depends(role_checker)):
+async def get_curr_user(user: User = Depends(get_current_user), _: bool = Depends(user_role_checker)):
     return user
 
 @auth_router.post("/send-mail")
@@ -55,7 +57,7 @@ async def create_user_account(user_data: UserCreateModel, bg_task: BackgroundTas
 
     token = create_url_safe_token({"email": email})
 
-    link = f"http://{Config.DOMAIN}/api/auth/verify/{token}"
+    link = f"http://{Config.DOMAIN}/v2/auth/verify/{token}"
 
     html_message = f"""
     <h3>Welcome to Booklynn! Verify your Email for Signup</h3>
@@ -100,6 +102,49 @@ async def verify_user_account(token: str, session: AsyncSession = Depends(get_se
         content={"message": "Error Occurred During Verification"},
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
     )
+
+
+@auth_router.get("/verify", response_class=HTMLResponse)
+async def verify_token_form(token: str | None = Query(default=None)):
+    if token:
+        return RedirectResponse(url=f"./{token}", status_code=status.HTTP_303_SEE_OTHER)
+    return """
+    <!doctype html>
+    <html lang=\"en\">
+      <head>
+        <meta charset=\"utf-8\">
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+        <title>Verify Email Token</title>
+        <style>
+          body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 24px; background: #fafafa; }
+          .card { max-width: 480px; margin: 40px auto; background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+          h1 { font-size: 20px; margin: 0 0 12px; }
+          p { color: #4b5563; margin: 0 0 20px; }
+          input[type=text] { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
+          button { margin-top: 16px; width: 100%; padding: 10px 12px; background: #111827; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+          button:hover { background: #0b0f1a; }
+          small { color: #6b7280; }
+        </style>
+      </head>
+      <body>
+        <div class=\"card\">
+          <h1>Verify your email</h1>
+          <p>Paste the verification token you received via email.</p>
+          <form method=\"post\" action=\"\"> 
+            <label for=\"token\"><small>Verification Token</small></label>
+            <input id=\"token\" name=\"token\" type=\"text\" placeholder=\"eyJhbGciOi...\" required />
+            <button type=\"submit\">Verify</button>
+          </form>
+        </div>
+      </body>
+    </html>
+    """
+
+
+@auth_router.post("/verify")
+async def verify_token_submit(token: str = Form(...)):
+    # Redirect to the existing token verification endpoint under the same prefix
+    return RedirectResponse(url=f"./{token}", status_code=status.HTTP_303_SEE_OTHER)
 
 
 
@@ -172,17 +217,41 @@ async def delete_user(user_uid: str, session: AsyncSession = Depends(get_session
         except ValueError:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid UUID format for user_uid")
 
-    statement = select(User).where(User.uid == normalized_uid)
+    # Model stores uid as String(36) → compare using string value
+    uid_str = str(normalized_uid)
+
+    from src.db.models import Book, Review  # local import to avoid circulars at module import time
+    from sqlalchemy.exc import IntegrityError
+
+    statement = select(User).where(User.uid == uid_str)
     result = await session.exec(statement)
     user = result.first()
 
     if user is None:
         raise UserNotFound()
 
-    await session.delete(user)
-    await session.commit()
+    try:
+        # Detach related rows to avoid FK violations (user_uid is nullable)
+        books_stmt = select(Book).where(Book.user_uid == uid_str)
+        books_result = await session.exec(books_stmt)
+        books = books_result.all()
+        for book in books:
+            book.user_uid = None
 
-    return JSONResponse(content={"message": "User deleted successfully", "uid": str(normalized_uid)}, status_code=status.HTTP_200_OK)
+        reviews_stmt = select(Review).where(Review.user_uid == uid_str)
+        reviews_result = await session.exec(reviews_stmt)
+        reviews = reviews_result.all()
+        for review in reviews:
+            review.user_uid = None
+
+        await session.delete(user)
+        await session.commit()
+    except IntegrityError:
+        # Rollback and surface a clearer client error
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cannot delete user due to related records")
+
+    return JSONResponse(content={"message": "User deleted successfully", "uid": uid_str}, status_code=status.HTTP_200_OK)
 
 
 #! Password reset routes
@@ -193,7 +262,8 @@ async def password_reset(email_data: PasswordResetRequestModel):
 
     token = create_url_safe_token({"email": email})
 
-    link = f"http://{Config.DOMAIN}/api/auth/password-reset-confirm/{token}"
+    # Point the user directly to the frontend with token so they can set a new password
+    link = f"{Config.FRONTEND_URL}?token={token}"
 
     html_message = f"""
     <h3>Reset Your Password </h3>
